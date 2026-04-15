@@ -10,3 +10,4 @@ tiktoken
 fastapi
 uvicorn
 pydantic
+langchain-chroma
