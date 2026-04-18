@@ -2,6 +2,7 @@
 __pycache__/
 .venv
 .vscode/
+.vscode/
 db/*.db
 db/chroma/
 scraper/data/knowledge.json
