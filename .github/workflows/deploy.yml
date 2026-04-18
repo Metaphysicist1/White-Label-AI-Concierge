@@ -11,8 +11,23 @@ env:
   WEBAPP_NAME: ${{ vars.AZURE_WEBAPP_NAME }}
 
 jobs:
+  quality-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v4
+        with:
+          python-version: 3.11
+      - run: |
+          pip install ruff
+          ruff format --check
+
   build-and-deploy:
     runs-on: ubuntu-latest
+
+    needs: quality-checks
+
+    if: contains(github.ref, 'refs/heads/main') && vars.AZURE_WEBAPP_NAME != ''
 
     steps:
       - name: Checkout repository
