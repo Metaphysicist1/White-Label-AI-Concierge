@@ -1,6 +1,7 @@
 # White-Label AI Concierge (FastAPI + LangGraph + Chroma)
 
 Production-ready, domain-agnostic AI assistant stack:
+
 - **Backend:** FastAPI + LangGraph
 - **Knowledge:** Web scraping JSON + PDF ingestion -> embeddings -> Chroma vector DB
 - **Lead capture:** Dynamic slot filling -> SQLite
@@ -77,6 +78,7 @@ Dockerfile
 
 1. **Set environment**
    - Create/update `.env`:
+
    ```env
    OPENAI_API_KEY=your_key_here
    OPENAI_CHAT_MODEL=gpt-4o-mini
@@ -127,6 +129,7 @@ The code tries multiple endpoints and falls back to local persistent Chroma if n
 ## Knowledge Pipeline (Web + PDF)
 
 ### Web crawl
+
 - Input: `scraper/data/urls.txt`
 - Output: `scraper/data/knowledge.json`
 - Behavior:
@@ -149,6 +152,7 @@ The code tries multiple endpoints and falls back to local persistent Chroma if n
 
 - `POST /api/chat`
   - body:
+
   ```json
   {
     "message": "Tell me about your services",
@@ -164,6 +168,7 @@ The code tries multiple endpoints and falls back to local persistent Chroma if n
 ## Frontend Customization
 
 Edit `app/static/index.html`:
+
 - `CHAT_WIDGET_CONFIG.title`
 - `CHAT_WIDGET_CONFIG.subtitle`
 - `CHAT_WIDGET_CONFIG.welcomeMessage`
@@ -181,6 +186,7 @@ This is your white-label chat UI template.
   3. Deploy to Azure Web App for Containers
 
 Required GitHub secrets/vars:
+
 - `REGISTRY_LOGIN_SERVER`
 - `REGISTRY_USERNAME`
 - `REGISTRY_PASSWORD`
