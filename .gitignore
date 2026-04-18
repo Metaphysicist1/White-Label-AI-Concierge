@@ -1,4 +1,9 @@
 .env
 __pycache__/
 .venv
+.vscode/
+db/*.db
+db/chroma/
+scraper/data/knowledge.json
+*.pyc
 

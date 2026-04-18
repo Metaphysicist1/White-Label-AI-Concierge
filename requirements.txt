@@ -11,3 +11,7 @@ fastapi
 uvicorn
 pydantic
 langchain-chroma
+PyYAML
+email-validator
+pypdf
+langchain-text-splitters

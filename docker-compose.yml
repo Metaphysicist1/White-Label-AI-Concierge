@@ -1,0 +1,35 @@
+version: "3.9"
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: wl-agent-api
+    env_file:
+      - .env
+    environment:
+      CHROMA_HOST: chroma
+      CHROMA_PORT: 8000
+      PORT: 8000
+    ports:
+      - "8000:8000"
+    depends_on:
+      - chroma
+    volumes:
+      - ./config:/app/config
+      - ./data:/app/data
+      - ./db:/app/db
+    restart: unless-stopped
+
+  chroma:
+    image: chromadb/chroma:latest
+    container_name: wl-agent-chroma
+    ports:
+      - "8001:8000"
+    volumes:
+      - chroma_data:/chroma/chroma
+    restart: unless-stopped
+
+volumes:
+  chroma_data:

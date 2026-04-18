@@ -1,0 +1,335 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Website Chat Widget Template</title>
+    <style>
+      :root {
+        --widget-primary: #2563eb;
+        --widget-primary-hover: #1d4ed8;
+        --widget-text: #111827;
+        --widget-muted: #6b7280;
+        --widget-bg: #ffffff;
+        --widget-bot-msg: #f3f4f6;
+        --widget-user-msg: #dbeafe;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        font-family: Inter, "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(135deg, #f8fafc 0%, #eef2ff 100%);
+      }
+
+      .chat-widget {
+        position: fixed;
+        right: 20px;
+        bottom: 20px;
+        z-index: 9999;
+      }
+
+      .chat-launcher {
+        width: 62px;
+        height: 62px;
+        border: none;
+        border-radius: 999px;
+        background: var(--widget-primary);
+        color: #fff;
+        font-size: 28px;
+        cursor: pointer;
+        box-shadow: 0 10px 30px rgba(37, 99, 235, 0.35);
+      }
+
+      .chat-launcher:hover {
+        background: var(--widget-primary-hover);
+      }
+
+      .chat-panel {
+        width: min(380px, calc(100vw - 24px));
+        height: min(640px, calc(100vh - 100px));
+        margin-bottom: 12px;
+        border-radius: 16px;
+        background: var(--widget-bg);
+        box-shadow: 0 14px 40px rgba(15, 23, 42, 0.2);
+        overflow: hidden;
+        display: none;
+        flex-direction: column;
+      }
+
+      .chat-panel.open {
+        display: flex;
+      }
+
+      .chat-header {
+        padding: 14px 16px;
+        background: var(--widget-primary);
+        color: #fff;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .chat-brand {
+        display: flex;
+        flex-direction: column;
+      }
+
+      .chat-title {
+        font-size: 15px;
+        font-weight: 700;
+      }
+
+      .chat-subtitle {
+        font-size: 12px;
+        opacity: 0.92;
+      }
+
+      .chat-close {
+        border: none;
+        background: transparent;
+        color: #fff;
+        font-size: 22px;
+        cursor: pointer;
+        line-height: 1;
+      }
+
+      .chat-body {
+        padding: 14px;
+        flex: 1;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        background: #fcfcfd;
+      }
+
+      .message {
+        max-width: 84%;
+        padding: 10px 12px;
+        border-radius: 12px;
+        font-size: 14px;
+        line-height: 1.45;
+        word-break: break-word;
+      }
+
+      .message.bot {
+        align-self: flex-start;
+        background: var(--widget-bot-msg);
+        color: var(--widget-text);
+        border-bottom-left-radius: 4px;
+      }
+
+      .message.user {
+        align-self: flex-end;
+        background: var(--widget-user-msg);
+        color: #0f172a;
+        border-bottom-right-radius: 4px;
+      }
+
+      .chat-loading {
+        font-size: 12px;
+        color: var(--widget-muted);
+        padding: 0 14px 8px 14px;
+        display: none;
+      }
+
+      .chat-input-row {
+        display: flex;
+        gap: 8px;
+        border-top: 1px solid #e5e7eb;
+        padding: 10px;
+        background: #fff;
+      }
+
+      .chat-input {
+        flex: 1;
+        border: 1px solid #d1d5db;
+        border-radius: 10px;
+        padding: 10px 12px;
+        outline: none;
+        font-size: 14px;
+      }
+
+      .chat-input:focus {
+        border-color: var(--widget-primary);
+      }
+
+      .chat-send {
+        border: none;
+        border-radius: 10px;
+        background: var(--widget-primary);
+        color: #fff;
+        padding: 10px 14px;
+        cursor: pointer;
+      }
+
+      .chat-send:hover {
+        background: var(--widget-primary-hover);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="chat-widget">
+      <div class="chat-panel" id="chatPanel" aria-live="polite">
+        <div class="chat-header">
+          <div class="chat-brand">
+            <span class="chat-title" id="chatTitle"></span>
+            <span class="chat-subtitle" id="chatSubtitle"></span>
+          </div>
+          <button class="chat-close" id="chatCloseBtn" aria-label="Close chat">&times;</button>
+        </div>
+        <div class="chat-body" id="chatBody"></div>
+        <div class="chat-loading" id="chatLoading">Assistant is typing...</div>
+        <div class="chat-input-row">
+          <input
+            id="chatInput"
+            class="chat-input"
+            type="text"
+            placeholder="Type your message..."
+            autocomplete="off"
+          />
+          <button id="chatSendBtn" class="chat-send">Send</button>
+        </div>
+      </div>
+      <button class="chat-launcher" id="chatLauncher" aria-label="Open chat">💬</button>
+    </div>
+
+    <script>
+      // Standard template configuration for easy white-label edits.
+      const CHAT_WIDGET_CONFIG = {
+        pageTitle: "Website Chat Widget Template",
+        title: "Company Knowledge Assistant",
+        subtitle: "Answers from your web + PDF knowledge base",
+        welcomeMessage:
+          "Hi. I can answer from the knowledge you uploaded (website crawl + company PDFs). Ask anything about your company data.",
+        apiPath: "/api/chat",
+        threadStorageKey: "chat_widget_thread_id",
+        launcherOpenIcon: "✕",
+        launcherClosedIcon: "💬",
+      };
+
+      document.title = CHAT_WIDGET_CONFIG.pageTitle;
+
+      const chatLauncher = document.getElementById("chatLauncher");
+      const chatPanel = document.getElementById("chatPanel");
+      const chatCloseBtn = document.getElementById("chatCloseBtn");
+      const chatBody = document.getElementById("chatBody");
+      const chatInput = document.getElementById("chatInput");
+      const chatSendBtn = document.getElementById("chatSendBtn");
+      const chatLoading = document.getElementById("chatLoading");
+      const chatTitle = document.getElementById("chatTitle");
+      const chatSubtitle = document.getElementById("chatSubtitle");
+
+      chatTitle.textContent = CHAT_WIDGET_CONFIG.title;
+      chatSubtitle.textContent = CHAT_WIDGET_CONFIG.subtitle;
+
+      const threadId = getOrCreateThreadId();
+      let isOpen = false;
+      let loadingTimer = null;
+      const loadingSteps = [
+        "Step 1/3: Understanding your question...",
+        "Step 2/3: Retrieving web/PDF knowledge...",
+        "Step 3/3: Preparing answer...",
+      ];
+
+      addMessage(CHAT_WIDGET_CONFIG.welcomeMessage, "bot");
+
+      chatLauncher.addEventListener("click", togglePanel);
+      chatCloseBtn.addEventListener("click", closePanel);
+      chatSendBtn.addEventListener("click", sendMessage);
+      chatInput.addEventListener("keydown", (event) => {
+        if (event.key === "Enter") sendMessage();
+      });
+
+      function getOrCreateThreadId() {
+        const existing = localStorage.getItem(CHAT_WIDGET_CONFIG.threadStorageKey);
+        if (existing) return existing;
+        const created = `web-${createSafeId()}`;
+        localStorage.setItem(CHAT_WIDGET_CONFIG.threadStorageKey, created);
+        return created;
+      }
+
+      function createSafeId() {
+        if (window.crypto && window.crypto.randomUUID) {
+          return window.crypto.randomUUID();
+        }
+        return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+      }
+
+      function togglePanel() {
+        isOpen ? closePanel() : openPanel();
+      }
+
+      function openPanel() {
+        isOpen = true;
+        chatPanel.classList.add("open");
+        chatLauncher.textContent = CHAT_WIDGET_CONFIG.launcherOpenIcon;
+        chatInput.focus();
+      }
+
+      function closePanel() {
+        isOpen = false;
+        chatPanel.classList.remove("open");
+        chatLauncher.textContent = CHAT_WIDGET_CONFIG.launcherClosedIcon;
+      }
+
+      async function sendMessage() {
+        const text = chatInput.value.trim();
+        if (!text) return;
+
+        addMessage(text, "user");
+        chatInput.value = "";
+        setLoading(true);
+
+        try {
+          const response = await fetch(CHAT_WIDGET_CONFIG.apiPath, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ message: text, thread_id: threadId }),
+          });
+
+          const payload = await response.json();
+          if (!response.ok) {
+            throw new Error(payload.detail || "Request failed.");
+          }
+
+          addMessage(payload.response || "No response received.", "bot");
+        } catch (error) {
+          addMessage(`Error: ${error.message}`, "bot");
+        } finally {
+          setLoading(false);
+        }
+      }
+
+      function setLoading(value) {
+        chatLoading.style.display = value ? "block" : "none";
+        if (value) {
+          let index = 0;
+          chatLoading.textContent = loadingSteps[index];
+          loadingTimer = setInterval(() => {
+            index = (index + 1) % loadingSteps.length;
+            chatLoading.textContent = loadingSteps[index];
+          }, 1400);
+        } else if (loadingTimer) {
+          clearInterval(loadingTimer);
+          loadingTimer = null;
+          chatLoading.textContent = "Assistant is typing...";
+        }
+        chatBody.scrollTop = chatBody.scrollHeight;
+      }
+
+      function addMessage(text, role) {
+        const div = document.createElement("div");
+        div.className = `message ${role}`;
+        div.textContent = text;
+        chatBody.appendChild(div);
+        chatBody.scrollTop = chatBody.scrollHeight;
+      }
+    </script>
+  </body>
+</html>

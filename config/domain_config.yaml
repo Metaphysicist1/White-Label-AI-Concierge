@@ -1,0 +1,52 @@
+brand:
+  name: "Acme Intelligent Concierge"
+  locale: "en-US"
+
+persona:
+  system_prompt: |
+    You are a white-label AI concierge for {{ brand.name }}.
+    Your goals:
+      1) Answer domain FAQs accurately using retrieved context.
+      2) Capture qualified leads with a professional and concise tone.
+      3) Escalate to a human when asked.
+    Rules:
+      - Never fabricate facts not grounded in the retrieved context.
+      - If context is insufficient, state uncertainty and offer handoff.
+      - Keep replies concise and practical.
+
+rag:
+  document_path: "./data/pdfs"
+  web_data_path: "./scraper/data/knowledge.json"
+  persist_directory: "./db/chroma"
+  collection_name: "knowledge_base"
+  top_k: 4
+  languages:
+    input: "mixed"
+    target_retrieval: "de"
+
+lead_capture:
+  storage:
+    backend: "sqlite"
+    sqlite_path: "./db/leads.db"
+  slot_schema:
+    model_name: "LeadPayload"
+    required_fields:
+      - name: "full_name"
+        type: "str"
+        description: "Prospect's full name."
+      - name: "email"
+        type: "EmailStr"
+        description: "Business email address."
+      - name: "company"
+        type: "str"
+        description: "Company or organization name."
+
+router:
+  intents:
+    - "faq"
+    - "lead_capture"
+    - "general"
+  descriptions:
+    faq: "Product, service, pricing, capabilities, and company FAQs."
+    lead_capture: "Quote request, demo request, contact sharing, or handoff request."
+    general: "Greetings, small talk, or unrelated questions."
