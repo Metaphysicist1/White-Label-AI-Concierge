@@ -18,8 +18,9 @@ print(f"Database directory: {DB_DIR}")
 
 print(f"OpenAI API key: {os.getenv('OPENAI_API_KEY')}")
 
+
 def load_data():
-    with open("scraper/data/knowledge.json", 'r', encoding='utf-8') as f:
+    with open("scraper/data/knowledge.json", "r", encoding="utf-8") as f:
         print(f"Loading data from {DATA_DIR}")
         scrapped_data = json.load(f)
 
@@ -27,36 +28,39 @@ def load_data():
     for item in scrapped_data:
         doc = Document(
             page_content=item["content"],
-            metadata={"source": item["url"], "title": item["title"]}
+            metadata={"source": item["url"], "title": item["title"]},
         )
         documents.append(doc)
     return documents
+
 
 def chunk_documents(documents):
     print("chunking Docuemnts...")
 
     text_splitter = RecursiveCharacterTextSplitter(
-        chunk_size=1000, 
-        chunk_overlap=150, 
-        length_function=len
+        chunk_size=1000, chunk_overlap=150, length_function=len
     )
     chunks = text_splitter.split_documents(documents)
     print(f"Split {len(documents)} documents into {len(chunks)} chunks")
     return chunks
 
+
 def build_vector_database(chunks):
     print("Initializing OpenAI Embeddings...")
 
-    embeddings = OpenAIEmbeddings(model="text-embedding-3-small", api_key=os.getenv("OPENAI_API_KEY"))
+    embeddings = OpenAIEmbeddings(
+        model="text-embedding-3-small", api_key=os.getenv("OPENAI_API_KEY")
+    )
 
     print(f"Building local Chroma Vector database at {DB_DIR}")
 
     db = Chroma.from_documents(
-        documents=chunks,
-        embedding=embeddings,
-        persist_directory=DB_DIR    
+        documents=chunks, embedding=embeddings, persist_directory=DB_DIR
     )
     print("Database built and persisted successfully!")
+
+    return db
+
 
 def main():
     if not os.path.exists(DATA_DIR):
@@ -66,6 +70,7 @@ def main():
     documents = load_data()
     chunks = chunk_documents(documents)
     build_vector_database(chunks)
+
 
 if __name__ == "__main__":
     main()

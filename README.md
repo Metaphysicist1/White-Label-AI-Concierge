@@ -10,6 +10,13 @@ Production-ready, domain-agnostic AI assistant stack:
 
 Main goal: clone this repo, update `config/domain_config.yaml`, add URLs/PDFs, deploy.
 
+## Portfolio Highlights (1-minute read)
+
+- **What it is:** A white-label, production-style AI concierge: chat UI, multi-agent LangGraph orchestration, RAG over your own web + PDF knowledge, and lead capture to SQLite.
+- **Why it matters:** Domain changes are mostly YAML + content (URLs/PDFs), not a rewrite of the graph—good for agencies, SaaS demos, and vertical pilots.
+- **Stack:** Python 3.11, FastAPI, LangGraph + LangChain, Chroma, SQLite, Docker, Azure Web App for Containers, GitHub Actions.
+- **Differentiators:** Same-domain web crawl → JSON → shared vector store with PDFs; `thread_id` + checkpointer for stateless HTTP; optional SSE streaming; CI/CD to Azure.
+
 ## System Components
 
 - **Frontend (`app/static/index.html`)**
@@ -49,6 +56,55 @@ Main goal: clone this repo, update `config/domain_config.yaml`, add URLs/PDFs, d
   - `Dockerfile` (production-oriented)
   - `docker-compose.yml` (local app + chroma)
   - `.github/workflows/deploy.yml` (build + deploy container to Azure)
+
+## Architecture
+
+End-to-end data and request flow (GitHub renders Mermaid on the repo home page).
+
+```mermaid
+flowchart TB
+  subgraph Browser
+    W["Floating chat widget<br/>app/static/index.html"]
+  end
+
+  subgraph Backend["FastAPI + LangGraph"]
+    API["REST /api/chat, /health"]
+    G["LangGraph: rewrite → router → RAG / lead / general"]
+    CP["MemorySaver checkpointer<br/>thread_id"]
+  end
+
+  subgraph Knowledge["Knowledge pipeline"]
+    URLS["scraper/data/urls.txt"]
+    SCR["scraper → knowledge.json"]
+    PDF["data/pdfs"]
+    ING["app.rag.ingest<br/>chunk + embed + upsert"]
+  end
+
+  subgraph Datastores
+    CH[("Chroma<br/>vector store")]
+    SQL[("SQLite<br/>leads.db")]
+  end
+
+  subgraph Deploy["Azure CI/CD"]
+    GH["GitHub Actions"]
+    IMG["Docker image"]
+    ACR["Azure Container Registry"]
+    APP["Azure Web App for Containers"]
+  end
+
+  W -->|POST message + thread_id| API
+  API --> G
+  G --- CP
+  G -->|similarity search| CH
+  G -->|persist lead| SQL
+
+  URLS --> SCR
+  SCR --> ING
+  PDF --> ING
+  ING --> CH
+
+  GH --> IMG --> ACR --> APP
+```
 
 ## Project Structure
 

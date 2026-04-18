@@ -31,7 +31,9 @@ async def chat(request: ChatRequest) -> ChatResponse:
             response=final_message.content,
         )
     except Exception as exc:
-        raise HTTPException(status_code=500, detail=f"Chat processing failed: {exc}") from exc
+        raise HTTPException(
+            status_code=500, detail=f"Chat processing failed: {exc}"
+        ) from exc
 
 
 @router.post("/chat/stream")

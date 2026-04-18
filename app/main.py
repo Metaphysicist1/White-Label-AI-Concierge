@@ -26,9 +26,15 @@ app.add_middleware(
 
 app.include_router(api_router)
 
+
 @app.get("/")
 async def root() -> HTMLResponse:
-    return HTMLResponse(content=open(os.path.join(static_dir, "index.html"), "r", encoding="utf-8").read())
+    return HTMLResponse(
+        content=open(
+            os.path.join(static_dir, "index.html"), "r", encoding="utf-8"
+        ).read()
+    )
+
 
 @app.get("/health")
 async def health() -> dict[str, str]:

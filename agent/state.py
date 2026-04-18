@@ -2,8 +2,8 @@ from typing import TypedDict, Annotated, Sequence
 from langchain_core.messages import BaseMessage
 import operator
 
-class AgentState(TypedDict):
 
+class AgentState(TypedDict):
     # hier speichern wir die messages direkt in unserer state
     messages: Annotated[Sequence[BaseMessage], operator.add]
 

@@ -127,11 +127,15 @@ def ingest_knowledge(
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Ingest PDFs and scraped web JSON into Chroma.")
+    parser = argparse.ArgumentParser(
+        description="Ingest PDFs and scraped web JSON into Chroma."
+    )
     parser.add_argument("--chunk-size", type=int, default=1200)
     parser.add_argument("--chunk-overlap", type=int, default=150)
     parser.add_argument("--only-pdfs", action="store_true", help="Ingest only PDFs.")
-    parser.add_argument("--only-web", action="store_true", help="Ingest only scraped web JSON.")
+    parser.add_argument(
+        "--only-web", action="store_true", help="Ingest only scraped web JSON."
+    )
     parser.add_argument(
         "--local-chroma",
         action="store_true",

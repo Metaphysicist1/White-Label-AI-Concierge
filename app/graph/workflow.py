@@ -19,6 +19,7 @@ import dotenv
 
 dotenv.load_dotenv()
 
+
 class RouterDecision(BaseModel):
     intent: Literal["faq", "lead_capture", "general"]
     rationale: str = Field(default="")
@@ -93,7 +94,11 @@ def _build_vectorstore() -> Chroma:
 
 def query_rewriter_node(state: WorkflowState) -> Dict[str, Any]:
     config = load_domain_config()
-    user_input = next(msg.content for msg in reversed(state["messages"]) if isinstance(msg, HumanMessage))
+    user_input = next(
+        msg.content
+        for msg in reversed(state["messages"])
+        if isinstance(msg, HumanMessage)
+    )
     target_lang = config.rag.languages.target_retrieval
     rewriter = _get_llm(temperature=0).with_structured_output(RewriteOutput)
     rewritten = rewriter.invoke(
@@ -171,7 +176,11 @@ def lead_capture_node(state: WorkflowState) -> Dict[str, Any]:
         ]
     )
     extracted_data = extracted.model_dump()
-    missing = [name for name, value in extracted_data.items() if value is None or not str(value).strip()]
+    missing = [
+        name
+        for name, value in extracted_data.items()
+        if value is None or not str(value).strip()
+    ]
 
     if missing:
         ask = _get_llm(temperature=0.3).invoke(
@@ -198,7 +207,11 @@ def lead_capture_node(state: WorkflowState) -> Dict[str, Any]:
     return {
         "slot_data": extracted_data,
         "slot_complete": True,
-        "messages": [AIMessage(content="Thanks, your details are saved. A team member will contact you shortly.")],
+        "messages": [
+            AIMessage(
+                content="Thanks, your details are saved. A team member will contact you shortly."
+            )
+        ],
     }
 
 
