@@ -1,5 +1,4 @@
-# White-Label AI Concierge (FastAPI + LangGraph + Chroma)
-
+# White-Label AI Concierge
 Production-ready, domain-agnostic AI assistant stack:
 
 - **Backend:** FastAPI + LangGraph
