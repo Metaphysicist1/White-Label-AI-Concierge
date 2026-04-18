@@ -54,11 +54,13 @@ def _build_store(use_remote_chroma: bool) -> Chroma:
         embedding_function=embeddings,
     )
 
+
 @traceable(run_type="chain", name="ingest_load_pdf_documents")
 def _load_pdf_documents(pdf_dir: Path) -> List[Document]:
     if not pdf_dir.exists():
         return []
     return PyPDFDirectoryLoader(str(pdf_dir)).load()
+
 
 @traceable(run_type="chain", name="ingest_load_web_documents")
 def _load_web_documents(web_json_path: Path) -> List[Document]:

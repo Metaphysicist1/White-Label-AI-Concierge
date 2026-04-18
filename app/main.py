@@ -1,14 +1,14 @@
+# ruff: noqa: E402, F403
 from __future__ import annotations
+from fastapi import FastAPI
+from fastapi.responses import HTMLResponse
+from fastapi.middleware.cors import CORSMiddleware
 
 import os
 
 from app.core.tracing import configure_langsmith
 
 configure_langsmith()
-
-from fastapi import FastAPI
-from fastapi.responses import HTMLResponse
-from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.routes import router as api_router
 

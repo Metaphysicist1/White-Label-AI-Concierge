@@ -17,6 +17,7 @@ stay pure graph/node logic; mixing global env side effects there makes the
 graph hard to test and reuse. We do **not** scatter ``os.environ`` writes in
 every node for the same reason.
 """
+
 from __future__ import annotations
 
 import os
