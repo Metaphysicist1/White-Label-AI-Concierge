@@ -25,9 +25,9 @@ jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
 
-    needs: quality-checks
+    needs: quality-check
 
-    if: contains(github.ref, 'refs/heads/main') && vars.AZURE_WEBAPP_NAME != ''
+    if: contains(github.ref, 'refs/heads/main') &&  vars.AZURE_WEBAPP_NAME != ''
 
     steps:
       - name: Checkout repository
