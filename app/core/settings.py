@@ -17,6 +17,12 @@ class Settings:
     chroma_host: str = os.getenv("CHROMA_HOST", "localhost")
     chroma_port: int = int(os.getenv("CHROMA_PORT", "8000"))
     app_env: str = os.getenv("APP_ENV", "development")
+    # LangSmith: LANGCHAIN_API_KEY is the standard env name LangChain reads.
+    langsmith_api_key: str = os.getenv("LANGCHAIN_API_KEY", "") or os.getenv(
+        "LANGSMITH_API_KEY", ""
+    )
+    langsmith_project: str = os.getenv("LANGCHAIN_PROJECT", "white-label-concierge")
+    langsmith_endpoint: str = os.getenv("LANGCHAIN_ENDPOINT", "")
 
 
 settings = Settings()

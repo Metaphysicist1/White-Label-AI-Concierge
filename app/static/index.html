@@ -181,7 +181,9 @@
             <span class="chat-title" id="chatTitle"></span>
             <span class="chat-subtitle" id="chatSubtitle"></span>
           </div>
-          <button class="chat-close" id="chatCloseBtn" aria-label="Close chat">&times;</button>
+          <button class="chat-close" id="chatCloseBtn" aria-label="Close chat">
+            &times;
+          </button>
         </div>
         <div class="chat-body" id="chatBody"></div>
         <div class="chat-loading" id="chatLoading">Assistant is typing...</div>
@@ -196,7 +198,9 @@
           <button id="chatSendBtn" class="chat-send">Send</button>
         </div>
       </div>
-      <button class="chat-launcher" id="chatLauncher" aria-label="Open chat">💬</button>
+      <button class="chat-launcher" id="chatLauncher" aria-label="Open chat">
+        💬
+      </button>
     </div>
 
     <script>
@@ -247,7 +251,9 @@
       });
 
       function getOrCreateThreadId() {
-        const existing = localStorage.getItem(CHAT_WIDGET_CONFIG.threadStorageKey);
+        const existing = localStorage.getItem(
+          CHAT_WIDGET_CONFIG.threadStorageKey,
+        );
         if (existing) return existing;
         const created = `web-${createSafeId()}`;
         localStorage.setItem(CHAT_WIDGET_CONFIG.threadStorageKey, created);

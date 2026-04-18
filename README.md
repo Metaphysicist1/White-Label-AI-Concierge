@@ -29,6 +29,7 @@ Main goal: clone this repo, update `config/domain_config.yaml`, add URLs/PDFs, d
   - Stateless REST endpoints
   - Passes `thread_id` into LangGraph checkpointer
   - Supports normal and streaming chat
+  - Optional **LangSmith** tracing (API span + graph runs + LLM/retriever children)
 
 - **Agent graph (`app/graph/workflow.py`)**
   - Query rewriter
@@ -113,6 +114,7 @@ app/
   api/routes.py
   core/config.py
   core/settings.py
+  core/tracing.py
   db/lead_store.py
   graph/workflow.py
   rag/ingest.py
@@ -142,6 +144,8 @@ Dockerfile
    CHROMA_HOST=localhost
    CHROMA_PORT=8001
    APP_ENV=development
+   LANGCHAIN_API_KEY=your_langsmith_key
+   LANGCHAIN_PROJECT=white-label-concierge
    ```
 
 2. **Configure your domain**
@@ -181,6 +185,40 @@ Dockerfile
   - `.env`: `CHROMA_HOST=localhost`, `CHROMA_PORT=8000`
 
 The code tries multiple endpoints and falls back to local persistent Chroma if needed.
+
+## Observability (LangSmith)
+
+### Enable tracing
+
+Add to `.env` (get the key from [LangSmith](https://smith.langchain.com/)):
+
+```env
+LANGCHAIN_API_KEY=your_key
+LANGCHAIN_PROJECT=white-label-concierge
+```
+
+When `LANGCHAIN_API_KEY` is set, `app/core/tracing.py` turns on `LANGCHAIN_TRACING_V2` at process startup so LangChain/LangGraph runs send traces to LangSmith.
+
+Optional: `LANGCHAIN_ENDPOINT` if you use a self-hosted LangSmith deployment.
+
+### What gets traced (high value)
+
+| Layer | What you see in LangSmith |
+|-------|---------------------------|
+| **HTTP** | `api_post_chat`, `api_post_chat_stream` — one trace per request; metadata includes `thread_id` and endpoint. |
+| **Graph** | `graph_node_query_rewriter`, `graph_node_semantic_router`, `graph_node_faq_rag`, `graph_node_lead_capture`, `graph_node_general`, `graph_route_intent`. |
+| **Retrieval** | `chroma_similarity_search` — explicit retriever span around Chroma `similarity_search`. |
+| **LLM** | Chat/completions inside nodes (via LangChain `ChatOpenAI`) appear as child LLM runs when tracing is on. |
+| **Ingestion CLI** | `ingest_knowledge_pipeline`, `ingest_load_pdf_documents`, `ingest_load_web_documents` — run `python -m app.rag.ingest` after setting the same env vars. |
+
+### Why `app/core/tracing.py` (and not scattered `os.environ` everywhere)
+
+**Architect rule:** tracing is **cross-cutting infrastructure**, not business logic.
+
+- **Put it in `app/core/tracing.py`** so there is a single place that documents and applies the LangSmith env contract. Entrypoints call `configure_langsmith()` **before** importing modules that build the compiled graph (`graph = build_workflow()` in `app/api/routes.py`). That avoids fragile ordering bugs across Uvicorn workers and CLI tools.
+- **Do not push tracing setup into `workflow.py` nodes** — nodes should stay pure (inputs → outputs). Global side effects there make unit tests and reuse harder.
+- **Do not only rely on ad-hoc prints** — LangSmith gives structured latency, token usage, and parent/child run trees for debugging production behavior.
+- **`@traceable` on graph nodes and the retriever** adds **named spans** for steps LangChain might not label the way you want (especially custom Chroma calls and multi-node graphs).
 
 ## Knowledge Pipeline (Web + PDF)
 

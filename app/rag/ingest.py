@@ -13,8 +13,11 @@ from langchain_core.documents import Document
 from langchain_openai import OpenAIEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
+from langsmith import traceable
+
 from app.core.config import load_domain_config
 from app.core.settings import settings
+from app.core.tracing import configure_langsmith
 
 
 def _validate_prerequisites() -> None:
@@ -51,13 +54,13 @@ def _build_store(use_remote_chroma: bool) -> Chroma:
         embedding_function=embeddings,
     )
 
-
+@traceable(run_type="chain", name="ingest_load_pdf_documents")
 def _load_pdf_documents(pdf_dir: Path) -> List[Document]:
     if not pdf_dir.exists():
         return []
     return PyPDFDirectoryLoader(str(pdf_dir)).load()
 
-
+@traceable(run_type="chain", name="ingest_load_web_documents")
 def _load_web_documents(web_json_path: Path) -> List[Document]:
     if not web_json_path.exists():
         return []
@@ -88,6 +91,7 @@ def _load_web_documents(web_json_path: Path) -> List[Document]:
     return docs
 
 
+@traceable(run_type="chain", name="ingest_knowledge_pipeline")
 def ingest_knowledge(
     chunk_size: int = 1200,
     chunk_overlap: int = 150,
@@ -127,6 +131,7 @@ def ingest_knowledge(
 
 
 def main() -> None:
+    configure_langsmith()
     parser = argparse.ArgumentParser(
         description="Ingest PDFs and scraped web JSON into Chroma."
     )

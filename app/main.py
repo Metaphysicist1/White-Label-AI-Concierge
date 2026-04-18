@@ -1,11 +1,16 @@
 from __future__ import annotations
 
+import os
+
+from app.core.tracing import configure_langsmith
+
+configure_langsmith()
+
 from fastapi import FastAPI
 from fastapi.responses import HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.routes import router as api_router
-import os
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
 static_dir = os.path.join(current_dir, "static")

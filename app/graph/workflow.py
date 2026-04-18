@@ -5,11 +5,13 @@ from typing import Annotated, Any, Dict, List, Literal, Optional, TypedDict
 
 import chromadb
 from langchain_chroma import Chroma
+from langchain_core.documents import Document
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import END, START, StateGraph
 from langgraph.graph.message import add_messages
+from langsmith import traceable
 from pydantic import BaseModel, EmailStr, Field, create_model
 
 from app.core.config import DomainConfig, load_domain_config
@@ -61,6 +63,12 @@ def _get_llm(temperature: float = 0.0) -> ChatOpenAI:
     )
 
 
+@traceable(run_type="retriever", name="chroma_similarity_search")
+def _similarity_search_documents(query: str, k: int) -> List[Document]:
+    vectorstore = _build_vectorstore()
+    return vectorstore.similarity_search(query, k=k)
+
+
 @lru_cache(maxsize=1)
 def _build_vectorstore() -> Chroma:
     config = load_domain_config()
@@ -92,6 +100,7 @@ def _build_vectorstore() -> Chroma:
     )
 
 
+@traceable(run_type="chain", name="graph_node_query_rewriter")
 def query_rewriter_node(state: WorkflowState) -> Dict[str, Any]:
     config = load_domain_config()
     user_input = next(
@@ -118,6 +127,7 @@ def query_rewriter_node(state: WorkflowState) -> Dict[str, Any]:
     }
 
 
+@traceable(run_type="chain", name="graph_node_semantic_router")
 def semantic_router_node(state: WorkflowState) -> Dict[str, str]:
     config = load_domain_config()
     router = _get_llm(temperature=0).with_structured_output(RouterDecision)
@@ -131,16 +141,16 @@ def semantic_router_node(state: WorkflowState) -> Dict[str, str]:
                 )
             ),
             *state["messages"],
-        ]
+        ],
     )
     return {"intent": decision.intent}
 
 
+@traceable(run_type="chain", name="graph_node_faq_rag")
 def faq_rag_node(state: WorkflowState) -> Dict[str, List[AIMessage]]:
     config = load_domain_config()
-    vectorstore = _build_vectorstore()
     query = state.get("rewritten_query") or state["messages"][-1].content
-    docs = vectorstore.similarity_search(query, k=config.rag.top_k)
+    docs = _similarity_search_documents(query, config.rag.top_k)
     context = "\n\n".join(doc.page_content for doc in docs) if docs else ""
     llm = _get_llm(temperature=0.2)
     response = llm.invoke(
@@ -160,6 +170,7 @@ def faq_rag_node(state: WorkflowState) -> Dict[str, List[AIMessage]]:
     return {"messages": [AIMessage(content=response.content)]}
 
 
+@traceable(run_type="chain", name="graph_node_lead_capture")
 def lead_capture_node(state: WorkflowState) -> Dict[str, Any]:
     config = load_domain_config()
     dynamic_model = _build_dynamic_slot_model(config)
@@ -215,6 +226,7 @@ def lead_capture_node(state: WorkflowState) -> Dict[str, Any]:
     }
 
 
+@traceable(run_type="chain", name="graph_node_general")
 def general_node(state: WorkflowState) -> Dict[str, List[AIMessage]]:
     config = load_domain_config()
     llm = _get_llm(temperature=0.5)
@@ -224,6 +236,7 @@ def general_node(state: WorkflowState) -> Dict[str, List[AIMessage]]:
     return {"messages": [AIMessage(content=response.content)]}
 
 
+@traceable(run_type="chain", name="graph_route_intent")
 def route_intent(state: WorkflowState) -> str:
     intent = state.get("intent", "general")
     if intent == "faq":
